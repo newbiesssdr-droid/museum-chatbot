@@ -4,9 +4,11 @@ import { Landmark, ScrollText, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroImage from "../assets/museum.jpg";
 import MuseumMap from "../map/MuseumMap"; // ✅ ADD THIS
+import { useTheme } from "../context/ThemeContext";
 
 export default function Home() {
   const [showMap, setShowMap] = useState(false); // ✅ ADD THIS
+  const { theme } = useTheme();
 
   return (
     <div
@@ -19,7 +21,9 @@ export default function Home() {
       }}
     >
       {/* Overlay */}
-      <div className="min-h-screen bg-black/50 backdrop-blur-sm flex flex-col">
+      <div className={`min-h-screen backdrop-blur-sm flex flex-col transition-colors duration-200 ${
+        theme === "dark" ? "bg-slate-950/75" : "bg-black/45"
+      }`}>
 
         {/* NAVBAR */}
         <nav className="flex items-center justify-between px-10 py-5">
@@ -76,32 +80,40 @@ export default function Home() {
       </div>
 
       {/* FEATURES SECTION */}
-      <div className="bg-black/80 py-16 px-6 md:px-16">
+      <div className={`py-16 px-6 md:px-16 transition-colors duration-200 ${
+        theme === "dark" ? "bg-slate-955 text-slate-100" : "bg-black/80 text-white"
+      }`}>
         <h2 className="text-center text-4xl font-bold mb-12">
           Museum Highlights
         </h2>
 
         <div className="grid md:grid-cols-3 gap-10">
-          <motion.div className="p-6 bg-white/10 rounded-2xl backdrop-blur-lg shadow-lg border border-white/20">
+          <motion.div className={`p-6 rounded-2xl shadow-lg border transition-colors duration-200 ${
+            theme === "dark" ? "bg-slate-900/40 border-slate-800" : "bg-white/10 border-white/20"
+          }`}>
             <Landmark className="w-12 h-12 text-amber-400 mb-4" />
             <h3 className="text-2xl font-semibold mb-2">Historical Artifacts</h3>
-            <p className="text-white/80">
+            <p className={`${theme === "dark" ? "text-slate-350" : "text-white/80"}`}>
               Discover ancient tools, sculptures, coins, weapons, and relics.
             </p>
           </motion.div>
 
-          <motion.div className="p-6 bg-white/10 rounded-2xl backdrop-blur-lg shadow-lg border border-white/20">
+          <motion.div className={`p-6 rounded-2xl shadow-lg border transition-colors duration-200 ${
+            theme === "dark" ? "bg-slate-900/40 border-slate-800" : "bg-white/10 border-white/20"
+          }`}>
             <ScrollText className="w-12 h-12 text-emerald-400 mb-4" />
             <h3 className="text-2xl font-semibold mb-2">Manuscripts & Records</h3>
-            <p className="text-white/80">
+            <p className={`${theme === "dark" ? "text-slate-355" : "text-white/80"}`}>
               Explore preserved manuscripts and historical documents.
             </p>
           </motion.div>
 
-          <motion.div className="p-6 bg-white/10 rounded-2xl backdrop-blur-lg shadow-lg border border-white/20">
+          <motion.div className={`p-6 rounded-2xl shadow-lg border transition-colors duration-200 ${
+            theme === "dark" ? "bg-slate-900/40 border-slate-800" : "bg-white/10 border-white/20"
+          }`}>
             <Users className="w-12 h-12 text-blue-400 mb-4" />
             <h3 className="text-2xl font-semibold mb-2">Guided Experiences</h3>
-            <p className="text-white/80">
+            <p className={`${theme === "dark" ? "text-slate-355" : "text-white/80"}`}>
               Learn through curated tours and interactive exhibits.
             </p>
           </motion.div>

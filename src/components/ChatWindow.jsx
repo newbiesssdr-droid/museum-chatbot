@@ -16,6 +16,7 @@ export default function ChatWindow({
   handleOpenPayment,
   processingTicketId,
   paymentProcessingState,
+  myTickets = [],
 }) {
   const chatEndRef = useRef(null);
   const [ticketSelections, setTicketSelections] = useState({}); // { msgIndex: { [showId]: quantity } }
@@ -105,20 +106,20 @@ export default function ChatWindow({
   };
 
   return (
-    <section className="flex-1 bg-white rounded-lg shadow-md flex flex-col h-[80vh] overflow-hidden">
+    <section className="flex-1 bg-transparent flex flex-col h-[80vh] overflow-hidden">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-white/20 bg-white/30 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-green-600 text-white flex items-center justify-center font-semibold">M</div>
+          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center font-bold shadow-md text-sm">🏛️</div>
           <div>
-            <div className="text-sm font-medium text-gray-800">Museum Assistant</div>
-            <div className="text-xs text-gray-400">Here to help — ask about shows, bookings & more</div>
+            <div className="text-sm font-semibold text-slate-800 leading-tight">Museum Assistant</div>
+            <div className="text-[11px] text-slate-500 font-medium">Here to help — ask about shows, bookings & more</div>
           </div>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-transparent">
         {messages.map((msg, index) => {
           const isUser = msg.sender === "user";
           return (
@@ -126,50 +127,114 @@ export default function ChatWindow({
               <div className={`max-w-[82%] flex ${isUser ? "flex-row-reverse" : "flex-row"} gap-3 items-end`}>
                 {/* Avatar */}
                 {!isUser ? (
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-cyan-400 to-indigo-500 text-white flex items-center justify-center font-semibold">🤖</div>
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center font-semibold shadow shadow-emerald-250">🤖</div>
                 ) : (
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-600 text-white flex items-center justify-center font-semibold">U</div>
+                  <div className="flex-shrink-0 w-9 h-9 rounded-full bg-white/50 border border-white/40 text-emerald-700 flex items-center justify-center font-bold shadow-sm">U</div>
                 )}
 
                 {/* Bubble */}
-                <div className={`p-3 rounded-xl shadow-sm break-words ${isUser ? "bg-green-600 text-white rounded-br-none" : "bg-white text-gray-800 rounded-bl-none border border-gray-100"}`} style={{ animation: "fadeIn .14s ease-out" }}>
+                <div className={`p-3 rounded-2xl shadow-sm break-words ${isUser ? "bg-emerald-600/80 backdrop-blur-sm text-white rounded-br-none border border-emerald-500/25" : "bg-white/70 backdrop-blur-sm text-slate-800 rounded-bl-none border border-white/40"}`} style={{ animation: "fadeIn .14s ease-out" }}>
                   
                   {(() => {
                     const successInfo = !isUser && getSuccessInfo(msg.text);
                     if (successInfo) {
+                      // Find matching ticket by bookingCode
+                      const ticket = myTickets.find((t) => t.bookingCode === successInfo.bookingCode);
+
+                      // Define states explicitly
+                      const isApproved = ticket?.status === "confirmed" && ticket?.paymentStatus === "Approved";
+                      const isDeclined = ticket?.status === "cancelled" && ticket?.paymentStatus === "Refunded";
+                      const isFailed = ticket?.status === "failed";
+                      
+                      // Otherwise, it's either pending, OR undefined (falling back to pending safely)
+                      const isPending = !isApproved && !isDeclined && !isFailed;
+
                       return (
                         <div className="flex flex-col gap-3 p-1 max-w-sm text-left">
                           {/* Status header */}
                           <div className="flex flex-col gap-1.5">
-                            <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
+                            <div className="flex items-center gap-2 text-emerald-700 font-semibold text-sm">
                               <span>✓</span>
                               <span>Payment Completed</span>
                             </div>
-                            <div className="flex items-center gap-2 text-yellow-600 font-semibold text-sm">
-                              <span className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></span>
-                              <span>Waiting for Admin Approval</span>
-                            </div>
+                            
+                            {isPending && (
+                              <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm">
+                                <span className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></span>
+                                <span>Waiting for Admin Approval</span>
+                              </div>
+                            )}
+
+                            {isApproved && (
+                              <div className="flex items-center gap-2 text-emerald-700 font-semibold text-sm">
+                                <span>✓</span>
+                                <span>Booking Approved & Confirmed</span>
+                              </div>
+                            )}
+
+                            {isDeclined && (
+                              <div className="flex items-center gap-2 text-red-700 font-semibold text-sm">
+                                <span>✕</span>
+                                <span>Booking Declined by Admin</span>
+                              </div>
+                            )}
+
+                            {isFailed && (
+                              <div className="flex items-center gap-2 text-red-700 font-semibold text-sm">
+                                <span>✕</span>
+                                <span>Payment Failed</span>
+                              </div>
+                            )}
                           </div>
 
                           {/* Main Message */}
-                          <div className="text-xs text-gray-600 border-t border-gray-100 pt-2 space-y-1">
-                            <p>Your payment has been completed successfully.</p>
-                            <p>The administrator is reviewing your booking.</p>
+                          <div className="text-xs text-slate-600 border-t border-white/20 pt-2 space-y-1">
+                            {isPending && (
+                              <>
+                                <p>Your payment has been completed successfully.</p>
+                                <p>The administrator is reviewing your booking.</p>
+                              </>
+                            )}
+                            {isApproved && (
+                              <p>Your booking has been approved. Your ticket is ready.</p>
+                            )}
+                            {isDeclined && (
+                              <p>Your booking was declined by the administrator. The payment refund will be processed according to the existing refund flow.</p>
+                            )}
+                            {isFailed && (
+                              <p>Your payment transaction failed. Please check with your bank or try booking again.</p>
+                            )}
                           </div>
 
                           {/* Booking details card */}
-                          <div className="bg-gray-50 border border-gray-100 rounded-lg p-2.5 text-xs text-gray-700 space-y-1">
-                            <p><span className="font-semibold text-gray-500">Booking ID:</span> {successInfo.bookingCode}</p>
-                            <p><span className="font-semibold text-gray-500">Show:</span> {successInfo.showName}</p>
+                          <div className="bg-white/40 border border-white/30 rounded-xl p-2.5 text-xs text-slate-750 shadow-sm space-y-1">
+                            <p><span className="font-semibold text-slate-500">Booking ID:</span> {successInfo.bookingCode}</p>
+                            <p><span className="font-semibold text-slate-500">Show:</span> {successInfo.showName}</p>
                           </div>
 
+                          {/* Action / Download for Approved */}
+                          {isApproved && ticket?.pdfUrl && (
+                            <a
+                              href={ticket.pdfUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="w-full py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-center text-xs shadow transition duration-200 inline-block mt-1 cursor-pointer"
+                            >
+                              🎟 Download Ticket PDF
+                            </a>
+                          )}
+
                           {/* Info Note */}
-                          <div className="text-[10px] text-gray-400 border-t border-gray-100 pt-2 space-y-1">
-                            <p className="flex items-start gap-1">
-                              <span>ℹ</span>
-                              <span>If the administrator cancels your booking, your payment will be refunded within 24 hours.</span>
-                            </p>
-                            <p className="font-medium text-gray-500 mt-1">Once approved, you can download your ticket from My Tickets.</p>
+                          <div className="text-[10px] text-slate-500 border-t border-white/20 pt-2 space-y-1">
+                            {isPending && (
+                              <p className="flex items-start gap-1">
+                                <span>ℹ</span>
+                                <span>If the administrator cancels your booking, your payment will be refunded within 24 hours.</span>
+                              </p>
+                            )}
+                            {isApproved && <p className="font-semibold text-emerald-750">Enjoy your show at the City Museum!</p>}
+                            {isDeclined && <p className="font-semibold text-red-755">Simulated project refund is processed to your original payment method.</p>}
+                            {isFailed && <p className="font-semibold text-red-755">No ticket was issued for this failed booking.</p>}
                           </div>
                         </div>
                       );

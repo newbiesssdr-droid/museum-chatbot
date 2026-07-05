@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { auth } from "../firebase";
 import { signOut } from "firebase/auth";
+import museumImage from "../assets/museum.jpg";
 
 import { cancelTicket, getMyTickets } from "../services/bookingService";
 import { processPayment } from "../services/paymentService";
@@ -286,38 +287,44 @@ export default function MainApp() {
   // =========================
   console.log("🎟 myTickets:", myTickets);
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
+    <div 
+      className="min-h-screen flex flex-col bg-cover bg-center text-slate-800"
+      style={{ backgroundImage: `url(${museumImage})`, backgroundAttachment: "fixed" }}
+    >
 
       <Header onLogout={() => signOut(auth)} />
 
       <main className="flex-1 flex">
 
   {/* LEFT SIDEBAR */}
-  <div className="w-16 flex flex-col items-center bg-white p-2 shadow-md">
+  <div className="w-16 flex flex-col items-center bg-white/40 backdrop-blur-md border border-white/20 m-2 rounded-2xl p-2 shadow-lg z-10">
     <button
-      className={`my-2 p-2 rounded hover:bg-gray-200 ${activePanel === "tickets" ? "bg-gray-200" : ""}`}
+      className={`my-2 p-2 rounded-xl transition-all duration-200 hover:bg-white/45 ${activePanel === "tickets" ? "bg-white/60 shadow-sm" : ""}`}
       onClick={() => setActivePanel(prev => prev === "tickets" ? null : "tickets")}
+      title="My Tickets"
     >
       🎟️
     </button>
 
     <button
-      className={`my-2 p-2 rounded hover:bg-gray-200 ${activePanel === "history" ? "bg-gray-200" : ""}`}
+      className={`my-2 p-2 rounded-xl transition-all duration-200 hover:bg-white/45 ${activePanel === "history" ? "bg-white/60 shadow-sm" : ""}`}
       onClick={() => setActivePanel(prev => prev === "history" ? null : "history")}
+      title="Chat History"
     >
       💬
     </button>
 
     <button
-      className={`my-2 p-2 rounded hover:bg-gray-200 ${activePanel === "shows" ? "bg-gray-200" : ""}`}
+      className={`my-2 p-2 rounded-xl transition-all duration-200 hover:bg-white/45 ${activePanel === "shows" ? "bg-white/60 shadow-sm" : ""}`}
       onClick={() => setActivePanel(prev => prev === "shows" ? null : "shows")}
+      title="Shows"
     >
       🎭
     </button>
   </div>
 
   {/* CHAT AREA */}
-  <div className={`flex-1 flex flex-col bg-white m-2 rounded shadow ${activePanel ? "md:w-2/3" : "w-full"}`}>
+  <div className={`flex-1 flex flex-col bg-white/50 backdrop-blur-md border border-white/25 m-2 rounded-2xl shadow-xl overflow-hidden z-10 ${activePanel ? "md:w-2/3" : "w-full"}`}>
 
     <ChatWindow
       messages={messages}
@@ -327,6 +334,7 @@ export default function MainApp() {
       handleOpenPayment={handleOpenPayment}
       processingTicketId={processingTicketId}
       paymentProcessingState={paymentProcessingState}
+      myTickets={myTickets}
     />
 
     <div ref={chatEndRef} />
@@ -340,35 +348,35 @@ export default function MainApp() {
 
   {/* RIGHT PANEL */}
   {activePanel && (
-    <div className="w-80 bg-white rounded shadow m-2 p-2 overflow-y-auto">
+    <div className="w-80 bg-white/50 backdrop-blur-md border border-white/25 rounded-2xl shadow-xl m-2 p-4 overflow-y-auto z-10 flex flex-col gap-4">
 
       {/* 🎟️ TICKETS */}
       {activePanel === "tickets" && (
   <div>
-    <h2 className="font-bold mb-2">🎟 My Tickets</h2>
+    <h2 className="font-bold text-lg mb-4 text-slate-800 border-b border-white/20 pb-2">🎟️ My Tickets</h2>
 
     {myTickets.length === 0 ? (
-      <p>No tickets yet</p>
+      <p className="text-slate-500 text-sm">No tickets yet</p>
     ) : (
       myTickets.map((t) => (
-         <div key={t.id} className="border p-2 mb-2 rounded">
+         <div key={t.id} className="border border-white/30 bg-white/40 p-3 mb-3 rounded-xl shadow-sm hover:shadow transition-shadow">
 
-           <p className="font-semibold">{t.showName}</p>
-           <p className="text-sm">Qty: {t.quantity}</p>
+           <p className="font-semibold text-slate-800">{t.showName}</p>
+           <p className="text-xs text-slate-500">Qty: {t.quantity}</p>
 
            {t.status === "pending" && t.paymentStatus === "Pending Approval" && (
-             <p className="text-sm text-yellow-600 font-semibold mt-1">Awaiting Admin Approval</p>
+             <p className="text-xs text-yellow-700 font-semibold mt-1.5 bg-yellow-50/50 px-2 py-0.5 rounded border border-yellow-200/50 w-fit">Awaiting Admin Approval</p>
            )}
            {t.status === "confirmed" && (
              <div>
-               <p className="text-sm text-green-600 font-semibold mt-1">Confirmed</p>
+               <p className="text-xs text-green-700 font-semibold mt-1.5 bg-green-50/50 px-2 py-0.5 rounded border border-green-200/50 w-fit">Confirmed</p>
                <div className="flex gap-2">
                  {t.pdfUrl && (
                    <a
                      href={t.pdfUrl}
                      target="_blank"
                      rel="noreferrer"
-                     className="mt-2 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition duration-200"
+                     className="mt-2 inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition duration-200"
                    >
                      🎟 Download Ticket
                    </a>
@@ -376,7 +384,7 @@ export default function MainApp() {
                  <button
                    onClick={() => handleCancel(t.id, t.showName)}
                    disabled={processingTicketId === t.id}
-                   className="mt-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-3 py-2 rounded-lg text-sm transition duration-200"
+                   className="mt-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition duration-200"
                  >
                    {processingTicketId === t.id ? "Cancelling..." : "Cancel Ticket"}
                  </button>
@@ -384,19 +392,19 @@ export default function MainApp() {
              </div>
            )}
            {t.status === "cancelled" && (
-             <p className="text-sm text-gray-500 font-semibold mt-1">
+             <p className="text-xs text-slate-500 font-semibold mt-1.5 bg-slate-100/50 px-2 py-0.5 rounded border border-slate-200/50 w-fit">
                {t.paymentStatus === "Refunded" ? "Declined & Refunded" : "Cancelled"}
              </p>
            )}
            {t.status === "failed" && (
-             <p className="text-sm text-red-600 font-semibold mt-1">Payment Failed</p>
+             <p className="text-xs text-red-700 font-semibold mt-1.5 bg-red-50/50 px-2 py-0.5 rounded border border-red-200/50 w-fit">Payment Failed</p>
            )}
            {t.status === "pending" && t.paymentStatus !== "Pending Approval" && (
              <div>
-               <p className="text-sm text-yellow-600 font-semibold mt-1">Pending Payment</p>
+               <p className="text-xs text-yellow-700 font-semibold mt-1.5 bg-yellow-50/50 px-2 py-0.5 rounded border border-yellow-200/50 w-fit">Pending Payment</p>
                <button
                  onClick={() => handleCancel(t.id, t.showName)}
-                 className="bg-red-500 text-white px-2 py-1 rounded mt-2 text-sm"
+                 className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg mt-2 text-xs font-semibold shadow transition duration-200"
                >
                  Cancel
                </button>

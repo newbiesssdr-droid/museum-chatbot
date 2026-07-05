@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AdminDashboard from "./admin/AdminDashboard";
@@ -7,6 +6,7 @@ import Login from "./pages/Login";
 import MainApp from "./pages/MainApp";
 import Home from "./pages/Home";   // ✅ added
 import { auth } from "./firebase";
+import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -25,7 +25,8 @@ function App() {
   const isAdmin = user?.email === "newbies.ssdr@gmail.com";
 
   return (
-    <BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
       <Routes>
 
         {/* ✅ Homepage always loads first — auth does NOT matter */}
@@ -48,7 +49,8 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
 
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

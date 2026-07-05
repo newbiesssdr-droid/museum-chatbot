@@ -7,6 +7,7 @@ import {
 } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import museumImage from "../assets/museum.jpg";
+import { useTheme } from "../context/ThemeContext";
 
 export default function Signup() {
   const [name, setName] = useState("");
@@ -16,6 +17,7 @@ export default function Signup() {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
+  const { theme } = useTheme();
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -58,7 +60,9 @@ export default function Signup() {
         backgroundRepeat: "no-repeat",
       }}
     >
-      <div className="backdrop-blur-lg bg-white/20 p-8 rounded-2xl shadow-xl w-full max-w-md border border-white/30">
+      <div className={`backdrop-blur-lg p-8 rounded-2xl shadow-xl w-full max-w-md border transition-colors duration-200 ${
+        theme === "dark" ? "bg-slate-900/60 border-slate-700/50" : "bg-white/20 border-white/30"
+      }`}>
         <h1 className="text-3xl font-bold mb-6 text-center text-white drop-shadow-lg">
           Create Account
         </h1>
@@ -70,7 +74,9 @@ export default function Signup() {
             <label className="block mb-1 font-medium text-white">Full Name</label>
             <input
               type="text"
-              className="w-full border border-white/40 bg-white/30 backdrop-blur-xl rounded-md p-2 text-white placeholder-white/70"
+              className={`w-full rounded-md p-2 border backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${
+                theme === "dark" ? "border-slate-700/60 bg-slate-950/40 text-slate-100 placeholder-slate-500" : "border-white/40 bg-white/30 text-white placeholder-white/70"
+              }`}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -81,7 +87,9 @@ export default function Signup() {
             <label className="block mb-1 font-medium text-white">Phone</label>
             <input
               type="tel"
-              className="w-full border border-white/40 bg-white/30 backdrop-blur-xl rounded-md p-2 text-white placeholder-white/70"
+              className={`w-full rounded-md p-2 border backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${
+                theme === "dark" ? "border-slate-700/60 bg-slate-950/40 text-slate-100 placeholder-slate-500" : "border-white/40 bg-white/30 text-white placeholder-white/70"
+              }`}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
@@ -92,7 +100,9 @@ export default function Signup() {
             <label className="block mb-1 font-medium text-white">Email</label>
             <input
               type="email"
-              className="w-full border border-white/40 bg-white/30 backdrop-blur-xl rounded-md p-2 text-white placeholder-white/70"
+              className={`w-full rounded-md p-2 border backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${
+                theme === "dark" ? "border-slate-700/60 bg-slate-950/40 text-slate-100 placeholder-slate-500" : "border-white/40 bg-white/30 text-white placeholder-white/70"
+              }`}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -103,7 +113,9 @@ export default function Signup() {
             <label className="block mb-1 font-medium text-white">Password</label>
             <input
               type="password"
-              className="w-full border border-white/40 bg-white/30 backdrop-blur-xl rounded-md p-2 text-white placeholder-white/70"
+              className={`w-full rounded-md p-2 border backdrop-blur-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors ${
+                theme === "dark" ? "border-slate-700/60 bg-slate-950/40 text-slate-100 placeholder-slate-500" : "border-white/40 bg-white/30 text-white placeholder-white/70"
+              }`}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

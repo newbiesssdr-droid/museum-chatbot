@@ -78,16 +78,17 @@ export default function ChatInput({ input, setInput, onSend }) {
   };
 
   return (
-    <div className="px-4 py-4 bg-white border-t">
+    <div className="px-4 py-4 bg-white/30 border-t border-white/20">
       <div className="flex gap-3 max-w-3xl mx-auto">
 
         {/* 🎤 Mic */}
         <button
           onClick={handleVoice}
           disabled={isListening}
-          className={`p-3 rounded-full ${
-            isListening ? "bg-red-500 text-white" : "bg-gray-200"
+          className={`p-3 rounded-full shadow-sm hover:shadow transition duration-200 cursor-pointer ${
+            isListening ? "bg-red-500 text-white animate-pulse" : "bg-white/50 hover:bg-white/70 border border-white/30"
           }`}
+          title="Speak"
         >
           🎤
         </button>
@@ -100,14 +101,14 @@ export default function ChatInput({ input, setInput, onSend }) {
             if (e.key === "Enter") sendMessage();
           }}
           placeholder={isListening ? "Listening..." : "Type or speak..."}
-          className="flex-1 px-4 py-3 border rounded-full"
+          className="flex-1 px-5 py-3 bg-white/40 border border-white/30 rounded-full focus:ring-2 focus:ring-emerald-400 focus:outline-none placeholder-slate-500 text-slate-800 shadow-inner"
         />
 
         {/* 📤 Send */}
         <button
           onClick={sendMessage}
           disabled={!input.trim()}
-          className="px-5 py-3 bg-teal-600 text-white rounded-full disabled:bg-gray-300"
+          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-white/30 disabled:text-slate-400 text-white font-semibold rounded-full shadow-md transition duration-200 cursor-pointer disabled:cursor-not-allowed"
         >
           Send
         </button>
