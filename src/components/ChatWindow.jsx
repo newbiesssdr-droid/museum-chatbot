@@ -8,7 +8,15 @@ import React, { useRef, useEffect, useState } from "react";
  *  - handleBook: function(showId, showName, quantity)
  *  - handleCancel: function(ticketId, showName)
  */
-export default function ChatWindow({ messages = [], isTyping = false, handleBook, handleCancel }) {
+export default function ChatWindow({
+  messages = [],
+  isTyping = false,
+  handleBook,
+  handleCancel,
+  handleOpenPayment,
+  processingTicketId,
+  paymentProcessingState,
+}) {
   const chatEndRef = useRef(null);
   const [ticketSelections, setTicketSelections] = useState({}); // { msgIndex: { [showId]: quantity } }
 
@@ -81,6 +89,21 @@ export default function ChatWindow({ messages = [], isTyping = false, handleBook
     }
   };
 
+  // Helper to parse success info from message text dynamically
+  const getSuccessInfo = (text) => {
+    if (!text) return null;
+    const isSuccess = text.includes("Payment successful!") && text.includes("awaiting administrator approval");
+    if (!isSuccess) return null;
+
+    const idMatch = text.match(/Booking ID:\s*([^\n\r]+)/i);
+    const showMatch = text.match(/Show:\s*([^\n\r]+)/i);
+
+    return {
+      bookingCode: idMatch ? idMatch[1].trim() : "N/A",
+      showName: showMatch ? showMatch[1].trim() : "Museum Gallery",
+    };
+  };
+
   return (
     <section className="flex-1 bg-white rounded-lg shadow-md flex flex-col h-[80vh] overflow-hidden">
       {/* Header */}
@@ -110,8 +133,72 @@ export default function ChatWindow({ messages = [], isTyping = false, handleBook
 
                 {/* Bubble */}
                 <div className={`p-3 rounded-xl shadow-sm break-words ${isUser ? "bg-green-600 text-white rounded-br-none" : "bg-white text-gray-800 rounded-bl-none border border-gray-100"}`} style={{ animation: "fadeIn .14s ease-out" }}>
-                  <div className="text-sm leading-relaxed">{msg.text}</div>
+                  
+                  {(() => {
+                    const successInfo = !isUser && getSuccessInfo(msg.text);
+                    if (successInfo) {
+                      return (
+                        <div className="flex flex-col gap-3 p-1 max-w-sm text-left">
+                          {/* Status header */}
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2 text-green-600 font-semibold text-sm">
+                              <span>✓</span>
+                              <span>Payment Completed</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-yellow-600 font-semibold text-sm">
+                              <span className="w-4 h-4 border-2 border-yellow-600 border-t-transparent rounded-full animate-spin"></span>
+                              <span>Waiting for Admin Approval</span>
+                            </div>
+                          </div>
+
+                          {/* Main Message */}
+                          <div className="text-xs text-gray-600 border-t border-gray-100 pt-2 space-y-1">
+                            <p>Your payment has been completed successfully.</p>
+                            <p>The administrator is reviewing your booking.</p>
+                          </div>
+
+                          {/* Booking details card */}
+                          <div className="bg-gray-50 border border-gray-100 rounded-lg p-2.5 text-xs text-gray-700 space-y-1">
+                            <p><span className="font-semibold text-gray-500">Booking ID:</span> {successInfo.bookingCode}</p>
+                            <p><span className="font-semibold text-gray-500">Show:</span> {successInfo.showName}</p>
+                          </div>
+
+                          {/* Info Note */}
+                          <div className="text-[10px] text-gray-400 border-t border-gray-100 pt-2 space-y-1">
+                            <p className="flex items-start gap-1">
+                              <span>ℹ</span>
+                              <span>If the administrator cancels your booking, your payment will be refunded within 24 hours.</span>
+                            </p>
+                            <p className="font-medium text-gray-500 mt-1">Once approved, you can download your ticket from My Tickets.</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return <div className="text-sm leading-relaxed">{msg.text}</div>;
+                  })()}
+
                   {msg.timestamp && <div className={`mt-2 text-xs ${isUser ? "text-green-100" : "text-gray-400"}`}>{formatTime(msg.timestamp)}</div>}
+
+                  {/* Payment Button */}
+                  {msg.paymentInfo && handleOpenPayment && (
+                    <div className="mt-3">
+                      <button
+                        disabled={!!processingTicketId}
+                        onClick={() => handleOpenPayment(msg.paymentInfo)}
+                        className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition-all duration-200 shadow-sm cursor-pointer text-center text-sm ${
+                          processingTicketId === msg.paymentInfo.ticketId
+                            ? "bg-emerald-700 cursor-wait animate-pulse"
+                            : processingTicketId
+                            ? "bg-gray-300 cursor-not-allowed text-gray-400"
+                            : "bg-emerald-600 hover:bg-emerald-700"
+                        }`}
+                      >
+                        {processingTicketId === msg.paymentInfo.ticketId
+                          ? paymentProcessingState || "Processing..."
+                          : `Pay ₹${msg.paymentInfo.amount}`}
+                      </button>
+                    </div>
+                  )}
 
                   {/* Options */}
                   {msg.options && msg.options.length > 0 && (

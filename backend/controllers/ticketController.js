@@ -111,10 +111,12 @@ export function getMyTickets(req, res) {
   if (!userId) return res.status(400).json({ success: false, message: "Missing userId" });
 
   const sql = `
-    SELECT t.id, t.booking_code, t.pdf_path, t.quantity, t.booking_date,
-           s.id AS show_id, s.name AS show_name, s.day_of_week, s.start_time, s.price
+    SELECT t.id, t.booking_code, t.pdf_path, t.quantity, t.booking_date, t.status,
+           s.id AS show_id, s.name AS show_name, s.day_of_week, s.start_time, s.price,
+           p.status AS payment_status
     FROM tickets t
     LEFT JOIN shows s ON t.show_id = s.id
+    LEFT JOIN payments p ON t.id = p.ticket_id
     WHERE t.user_id = ?
     ORDER BY t.booking_date DESC
   `;
@@ -134,6 +136,8 @@ export function getMyTickets(req, res) {
       time: r.start_time ? r.start_time.slice(0, 5) : null,
       pricePerTicket: r.price || 0,
       totalPrice: (r.price || 0) * r.quantity,
+      status: r.status,
+      paymentStatus: r.payment_status,
     }));
 
     res.json({ success: true, tickets });

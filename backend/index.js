@@ -3,6 +3,11 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
+
 import showRoutes from "./routes/showRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
@@ -12,6 +17,11 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import ticketRoutes from "./routes/ticketRoutes.js";
 import verifyRoutes from "./routes/verifyRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+
+import { startExpirationChecker } from "./controllers/bookingController.js";
+
+// Start background expiration task
+startExpirationChecker();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
