@@ -8,6 +8,102 @@ export async function handleDialogflow(req, res) {
   if (!sessionId) sessionId = uuidv4();
   if (!userId) userId = "guest_user";
 
+  // Clean message for robust matching (trim spaces and strip trailing punctuation ?, ., !, etc.)
+  const cleanMsg = message.trim().replace(/[?.,!]+$/, "").trim();
+
+  // Intercept booking status queries (simple case-insensitive match on natural variations)
+  const statusQueryRegex = /^(?:what is my booking status|check my latest ticket|show my latest booking|check booking status|my booking status|show my latest ticket|what is my ticket status|what's my booking status|track my booking)$/i;
+
+  const isStatusMatch = statusQueryRegex.test(cleanMsg);
+  console.log(`[Chatbot Status Check] Raw Message: "${message}", Clean Message: "${cleanMsg}", UserID: "${userId}", Matched: ${isStatusMatch}`);
+  
+  if (isStatusMatch) {
+    // 1. Security Check: Block guest users
+    if (userId === "guest_user" || userId === "guest" || !userId) {
+      return res.json({ reply: "Please log in to check your booking status." });
+    }
+
+    // 2. Query DB: Retrieve user's latest ticket and its latest payment record
+    const sql = `
+      SELECT t.booking_code, t.status AS ticket_status, 
+             s.day_of_week, s.start_time,
+             p.status AS payment_status
+      FROM tickets t
+      LEFT JOIN shows s ON t.show_id = s.id
+      LEFT JOIN payments p ON t.id = p.ticket_id
+      WHERE t.user_id = ?
+      ORDER BY t.booking_date DESC, p.id DESC
+      LIMIT 1
+    `;
+
+    db.query(sql, [userId], (err, results) => {
+      // 3. Error Handling
+      if (err) {
+        console.error("❌ Error fetching latest booking status:", err);
+        return res.json({ 
+          reply: "Sorry, I encountered an error while retrieving your booking status. Please try again later." 
+        });
+      }
+
+      // 4. No Booking Case
+      if (!results.length) {
+        return res.json({ 
+          reply: "You don't have any bookings yet. Would you like to book a museum ticket?" 
+        });
+      }
+
+      const ticket = results[0];
+
+      // 5. Format Visit Schedule from Shows table
+      function formatTime12Hour(timeStr) {
+        if (!timeStr) return "N/A";
+        const parts = timeStr.split(":");
+        if (parts.length < 2) return timeStr;
+        let hours = parseInt(parts[0], 10);
+        const minutes = parts[1];
+        const ampm = hours >= 12 ? "PM" : "AM";
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+        return `${hours}:${minutes} ${ampm}`;
+      }
+
+      const formattedTime = formatTime12Hour(ticket.start_time);
+      const visitSchedule = ticket.day_of_week ? `${ticket.day_of_week} at ${formattedTime}` : "N/A";
+
+      // 6. Map Statuses
+      const paymentStatus = ticket.payment_status || "Pending Payment";
+      let bookingStatus = "Pending";
+
+      if (ticket.ticket_status === "confirmed") {
+        bookingStatus = "Confirmed";
+      } else if (ticket.ticket_status === "cancelled") {
+        bookingStatus = "Cancelled";
+      } else if (ticket.ticket_status === "failed") {
+        bookingStatus = "Failed";
+      } else if (ticket.ticket_status === "pending") {
+        if (paymentStatus === "Pending Approval") {
+          bookingStatus = "Waiting for Admin Approval";
+        } else if (paymentStatus === "Pending Payment") {
+          bookingStatus = "Waiting for Payment";
+        } else {
+          bookingStatus = "Pending";
+        }
+      }
+
+      // 7. Format Chatbot Response
+      const replyMessage = 
+`🎫 Booking ID: ${ticket.booking_code}
+🗓️ Visit Schedule: ${visitSchedule}
+💳 Payment Status: ${paymentStatus}
+⏳ Booking Status: ${bookingStatus}`;
+
+      return res.json({ reply: replyMessage });
+    });
+
+    return; // Stop processing further
+  }
+
+
   // Regex to extract booking code directly from message (e.g. BKG-E25B7B)
   const codeMatch = message.match(/BKG-(?:\d{14}|[A-Z0-9]{6})/i);
   if (codeMatch) {

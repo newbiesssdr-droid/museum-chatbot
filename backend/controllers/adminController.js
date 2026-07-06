@@ -1,5 +1,6 @@
 import { db } from "../config/db.js";
 import { createTicketPdf } from "./ticketController.js";
+import { createNotification } from "../utils/notificationHelper.js";
 
 // Fetch all shows
 export const getShows = (req, res) => {
@@ -127,6 +128,16 @@ export const approveBooking = (req, res) => {
                       if (commitErr) {
                         return db.rollback(() => res.status(500).json({ success: false, message: "Commit failed" }));
                       }
+
+                      // Failure-isolated notification (secondary action)
+                      createNotification({
+                        userId: ticket.user_id,
+                        ticketId,
+                        bookingCode: ticket.booking_code,
+                        type: "booking_approved",
+                        message: "Your booking has been approved. Your ticket is ready to download.",
+                      });
+
                       res.json({ success: true, message: "Booking approved successfully!" });
                     });
                   }
@@ -198,6 +209,16 @@ export const declineBooking = (req, res) => {
                       if (commitErr) {
                         return db.rollback(() => res.status(500).json({ success: false, message: "Commit failed" }));
                       }
+
+                      // Failure-isolated notification (secondary action)
+                      createNotification({
+                        userId: ticket.user_id,
+                        ticketId,
+                        bookingCode: ticket.booking_code,
+                        type: "booking_declined",
+                        message: "Your booking was declined. Refund initiated.",
+                      });
+
                       res.json({ success: true, message: "Booking declined and refund simulated." });
                     });
                   }

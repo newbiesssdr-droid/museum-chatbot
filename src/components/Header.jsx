@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { auth } from "../firebase"; // <- uses your existing auth export
 import { onAuthStateChanged } from "firebase/auth";
 import { useTheme } from "../context/ThemeContext";
+import NotificationBell from "./NotificationBell";
 
 export default function Header({ onNewChat, onLogout }) {
   const [open, setOpen] = useState(false);
@@ -110,6 +111,20 @@ export default function Header({ onNewChat, onLogout }) {
 
           {/* Right actions */}
           <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className={`inline-flex items-center justify-center p-2 rounded-xl border shadow-sm transition duration-200 cursor-pointer text-sm ${
+                theme === "dark"
+                  ? "bg-slate-800/60 hover:bg-slate-700/60 border-white/10 text-amber-400"
+                  : "bg-white/50 hover:bg-white/75 border border-white/30 text-slate-755"
+              }`}
+              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === "dark" ? "☀" : "🌙"}
+            </button>
+
+            <NotificationBell firebaseUser={firebaseUser} />
+
             {firebaseUser?.email === "newbies.ssdr@gmail.com" && (
               <button
                 onClick={() => navigate("/admin")}
@@ -118,18 +133,6 @@ export default function Header({ onNewChat, onLogout }) {
                 🛠️ Admin Mode
               </button>
             )}
-
-            <button
-              onClick={toggleTheme}
-              className={`inline-flex items-center justify-center p-2 rounded-xl border shadow-sm transition duration-200 cursor-pointer text-sm ${
-                theme === "dark"
-                  ? "bg-slate-800/60 hover:bg-slate-700/60 border-white/10 text-amber-400"
-                  : "bg-white/50 hover:bg-white/75 border border-white/30 text-slate-750"
-              }`}
-              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            >
-              {theme === "dark" ? "☀" : "🌙"}
-            </button>
 
             <button
               onClick={onNewChat}

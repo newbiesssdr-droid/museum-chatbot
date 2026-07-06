@@ -1,5 +1,6 @@
 // controllers/cancelController.js
 import { db } from "../config/db.js";
+import { createNotification } from "../utils/notificationHelper.js";
 
 export const cancelTicket = (req, res) => {
   const { ticketId, userId = "guest_user" } = req.body;
@@ -40,6 +41,15 @@ export const cancelTicket = (req, res) => {
                 res.json({ reply: "Commit cancellation failed." });
               });
             }
+
+            // Failure-isolated notification (secondary action)
+            createNotification({
+              userId: ticket.user_id,
+              ticketId,
+              bookingCode: ticket.booking_code,
+              type: "booking_cancelled",
+              message: "Your booking was cancelled.",
+            });
 
             return res.json({
               reply: `❌ Booking (Ticket ID: ${ticketId}) cancelled.`,

@@ -1,8 +1,8 @@
-// controllers/paymentController.js
 import { db } from "../config/db.js";
 import razorpay from "../services/razorpayService.js";
 import { createTicketPdf } from "./ticketController.js";
 import Razorpay from "razorpay";
+import { createNotification } from "../utils/notificationHelper.js";
 
 // ==========================================
 // 1. CREATE RAZORPAY ORDER (With Retry Support)
@@ -131,30 +131,46 @@ export function verifyPayment(req, res) {
   db.beginTransaction((txErr) => {
     if (txErr) return res.json({ success: false, message: "Database transaction failed" });
 
-    // Update payment log status to 'Pending Approval'
-    db.query(
-      `UPDATE payments 
-       SET status = 'Pending Approval', razorpay_payment_id = ?, razorpay_signature = ? 
-       WHERE razorpay_order_id = ?`,
-      [razorpay_payment_id, razorpay_signature, razorpay_order_id],
-      (updatePayErr) => {
-        if (updatePayErr) {
-          return db.rollback(() => res.json({ success: false, message: "Failed to update payment status" }));
-        }
+    // Retrieve ticket details first to get the user_id and booking_code
+    db.query("SELECT user_id, booking_code FROM tickets WHERE id = ?", [ticketId], (ticketErr, ticketResults) => {
+      if (ticketErr || !ticketResults.length) {
+        return db.rollback(() => res.json({ success: false, message: "Ticket not found" }));
+      }
+      const ticket = ticketResults[0];
 
-        // We do not change ticket status from 'pending' and we do not generate a PDF yet.
-        db.commit((commitErr) => {
-          if (commitErr) {
-            return db.rollback(() => res.json({ success: false, message: "Commit verification failed" }));
+      // Update payment log status to 'Pending Approval'
+      db.query(
+        `UPDATE payments 
+         SET status = 'Pending Approval', razorpay_payment_id = ?, razorpay_signature = ? 
+         WHERE razorpay_order_id = ?`,
+        [razorpay_payment_id, razorpay_signature, razorpay_order_id],
+        (updatePayErr) => {
+          if (updatePayErr) {
+            return db.rollback(() => res.json({ success: false, message: "Failed to update payment status" }));
           }
 
-          res.json({
-            success: true,
-            message: "Payment successful. Awaiting administrator approval.",
+          db.commit((commitErr) => {
+            if (commitErr) {
+              return db.rollback(() => res.json({ success: false, message: "Commit verification failed" }));
+            }
+
+            // Failure-isolated notification creation (secondary action)
+            createNotification({
+              userId: ticket.user_id,
+              ticketId,
+              bookingCode: ticket.booking_code,
+              type: "payment_success",
+              message: "Payment completed. Your booking is waiting for admin approval.",
+            });
+
+            res.json({
+              success: true,
+              message: "Payment successful. Awaiting administrator approval.",
+            });
           });
-        });
-      }
-    );
+        }
+      );
+    });
   });
 }
 

@@ -26,3 +26,9 @@ backend/tickets/*.pdf
 *.njsproj
 *.sln
 *.sw?
+
+backend/.env
+backend/*service-account*.json
+
+backend/.env
+backend/*service-account*.json

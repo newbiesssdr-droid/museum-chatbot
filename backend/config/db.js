@@ -34,6 +34,29 @@ db.connect(err => {
         console.error("❌ Error ensuring payments table exists:", tableErr);
       } else {
         console.log("✅ Database schema verified / payments table ensured");
+
+        const createNotificationsTable = `
+          CREATE TABLE IF NOT EXISTS notifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id VARCHAR(255) NOT NULL,
+            ticket_id INT NOT NULL,
+            booking_code VARCHAR(64) NOT NULL,
+            type VARCHAR(50) NOT NULL,
+            message TEXT NOT NULL,
+            event_key VARCHAR(128) NOT NULL,
+            is_read BOOLEAN DEFAULT FALSE,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_notification_event (event_key)
+          ) ENGINE=InnoDB;
+        `;
+
+        db.query(createNotificationsTable, (notifErr) => {
+          if (notifErr) {
+            console.error("❌ Error ensuring notifications table exists:", notifErr);
+          } else {
+            console.log("✅ Notifications table ensured");
+          }
+        });
       }
     });
   }

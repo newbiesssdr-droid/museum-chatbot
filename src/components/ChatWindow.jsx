@@ -1,6 +1,58 @@
 // src/components/ChatWindow.jsx
 import React, { useRef, useEffect, useState } from "react";
 
+// Helpers to check and parse booking status messages for custom UI rendering
+const isBookingStatusMessage = (text) => {
+  if (!text) return false;
+  return text.includes("🎫 Booking ID:") &&
+         text.includes("🗓️ Visit Schedule:") &&
+         text.includes("💳 Payment Status:") &&
+         text.includes("⏳ Booking Status:");
+};
+
+const parseBookingStatusMessage = (text) => {
+  if (!text) return null;
+  const idMatch = text.match(/🎫\s*Booking ID:\s*([^\n\r]+)/i);
+  const scheduleMatch = text.match(/🗓️\s*Visit Schedule:\s*([^\n\r]+)/i);
+  const paymentMatch = text.match(/💳\s*Payment Status:\s*([^\n\r]+)/i);
+  const bookingStatusMatch = text.match(/⏳\s*Booking Status:\s*([^\n\r]+)/i);
+
+  if (!idMatch || !scheduleMatch || !paymentMatch || !bookingStatusMatch) {
+    return null;
+  }
+
+  return {
+    bookingId: idMatch[1].trim(),
+    visitSchedule: scheduleMatch[1].trim(),
+    paymentStatus: paymentMatch[1].trim(),
+    bookingStatus: bookingStatusMatch[1].trim(),
+  };
+};
+
+const getBadgeStyle = (status) => {
+  const s = status.toLowerCase();
+  if (s.includes("confirmed") || s === "approved") {
+    return "bg-emerald-50 text-emerald-700 border-emerald-250/60";
+  }
+  if (s.includes("pending") || s.includes("waiting")) {
+    return "bg-amber-50 text-amber-700 border-amber-250/60";
+  }
+  if (s.includes("cancelled") || s.includes("failed")) {
+    return "bg-rose-50 text-rose-700 border-rose-250/60";
+  }
+  if (s.includes("refunded")) {
+    return "bg-blue-50 text-blue-700 border-blue-250/60";
+  }
+  return "bg-slate-50 text-slate-700 border-slate-200/60";
+};
+
+const getStatusLabel = (status) => {
+  if (status.toLowerCase().includes("confirmed")) return `✓ Confirmed`;
+  if (status.toLowerCase().includes("failed") || status.toLowerCase().includes("cancelled")) return `✕ ${status}`;
+  return status;
+};
+
+
 /**
  * Props:
  *  - messages: [{ sender: 'user'|'bot', text: string, timestamp?: number, options?: [{id, name, day, time, price, available_tickets}] }])
@@ -239,6 +291,59 @@ export default function ChatWindow({
                         </div>
                       );
                     }
+                    if (!isUser) {
+                      const parsedStatus = parseBookingStatusMessage(msg.text);
+                      if (parsedStatus) {
+                        return (
+                          <div className="booking-status-card p-3.5 rounded-xl border border-slate-200/30 bg-white/40 shadow-xs w-full max-w-xs sm:max-w-sm space-y-3">
+                            {/* Header */}
+                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none">
+                              <span>🎫</span>
+                              <span>Booking Status</span>
+                            </div>
+
+                            {/* Main Row */}
+                            <div className="flex items-center justify-between gap-4 flex-wrap">
+                              <span className="text-sm font-semibold text-slate-800 break-all select-all font-mono">
+                                {parsedStatus.bookingId}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border tracking-wide shadow-2xs ${getBadgeStyle(parsedStatus.bookingStatus)}`}>
+                                {getStatusLabel(parsedStatus.bookingStatus)}
+                              </span>
+                            </div>
+
+                            {/* Divider */}
+                            <div className="border-t border-slate-200/40 my-1" />
+
+                            {/* Bottom Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-xs">
+                              {/* Visit Schedule */}
+                              <div className="space-y-0.5">
+                                <div className="text-[10px] text-slate-400 font-semibold tracking-wide flex items-center gap-1">
+                                  <span>🗓️</span>
+                                  <span>Visit Schedule</span>
+                                </div>
+                                <div className="font-semibold text-slate-700 leading-tight">
+                                  {parsedStatus.visitSchedule}
+                                </div>
+                              </div>
+                              
+                              {/* Payment */}
+                              <div className="space-y-0.5">
+                                <div className="text-[10px] text-slate-400 font-semibold tracking-wide flex items-center gap-1">
+                                  <span>💳</span>
+                                  <span>Payment</span>
+                                </div>
+                                <div className="font-semibold text-slate-700 leading-tight">
+                                  {parsedStatus.paymentStatus}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+                    }
+
                     return <div className="text-sm leading-relaxed">{msg.text}</div>;
                   })()}
 
